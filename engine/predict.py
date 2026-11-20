@@ -24,13 +24,18 @@ Usage
   python3 engine/predict.py --from 2026-11-14 --backtest
 Standard library only.
 """
-import argparse, csv, io, json, math, os, sys, time, urllib.request
+import argparse, csv, difflib, io, json, math, os, re, sys, time, urllib.request
+from zoneinfo import ZoneInfo
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, "engine", ".cache")
 OUT = os.path.join(ROOT, "app", "data", "predictions.json")
+HIST = os.path.join(ROOT, "app", "data", "history.json")
+UK = ZoneInfo("Europe/London")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import espn  # noqa: E402
 BASE = "https://www.football-data.co.uk/"
 SEASON, PREV = "2627", "2526"
 
@@ -158,7 +163,15 @@ def load_fixtures():
                        avg=(fnum(r, "AvgH"), fnum(r, "AvgD"), fnum(r, "AvgA")),
                        best=(fnum(r, "MaxH"), fnum(r, "MaxD"), fnum(r, "MaxA")),
                        sharp_ou=(None, None), avg_ou=(None, None), best_ou=(None, None)))
-    return [f for f in fx if f["date"]]
+    fx = [f for f in fx if f["date"]]
+    for f in fx:
+        try:
+            hh, mm = (int(x) for x in f["time"].split(":"))
+        except ValueError:
+            hh, mm = 15, 0
+        f["ko"] = datetime(f["date"].year, f["date"].month, f["date"].day, hh, mm, tzinfo=UK).astimezone(timezone.utc)
+        f["src"] = "football-data"
+    return fx
 
 
 # ---------------------------------------------------------------- model
@@ -322,7 +335,8 @@ def build(fx, rt):
     has_odds = bool(devig(fx["sharp"]) or devig(fx["avg"]))
     x1x2 = fx["sharp"] if devig(fx["sharp"]) else fx["avg"] if devig(fx["avg"]) else None
     xou = fx["sharp_ou"] if devig(fx["sharp_ou"]) else fx["avg_ou"] if devig(fx["avg_ou"]) else None
-    pr = price(rt, fx["home"], fx["away"], x1x2, xou)
+    hk, ak = fx.get("hk", fx["home"]), fx.get("ak", fx["away"])
+    pr = price(rt, hk, ak, x1x2, xou)
     m = matrix(*pr["xg"])
     s = summarize(m)
     odds_for = {"1": (fx["avg"][0], fx["best"][0]), "X": (fx["avg"][1], fx["best"][1]), "2": (fx["avg"][2], fx["best"][2]),
@@ -339,7 +353,7 @@ def build(fx, rt):
     value_c = [x for x in mk if x["edge_best"] is not None and x["edge_best"] > 0.02 and x["p"] >= 0.25]
     value = max(value_c, key=lambda x: (x["edge_avg"] or -1, x["edge_best"])) if value_c else None
 
-    gh, ga = rt.games(fx["home"]), rt.games(fx["away"])
+    gh, ga = rt.games(hk), rt.games(ak)
     data_q = min(1.0, min(gh, ga) / 10)
     if pr["fair"]:
         dm = pr["model"]
@@ -349,8 +363,9 @@ def build(fx, rt):
     conf = round(100 * (0.65 * safe["p"] + 0.2 * agree + 0.15 * data_q))
     cs = sorted(((f"{i}-{j}", m[i][j]) for i in range(7) for j in range(7)), key=lambda x: -x[1])[:6]
     return dict(
-        id=f"{fx['div']}-{fx['date'].isoformat()}-{fx['home']}-{fx['away']}".replace(" ", "_"),
+        id=fx.get("id") or f"{fx['div']}-{fx['date'].isoformat()}-{fx['home']}-{fx['away']}".replace(" ", "_"),
         country=fx["country"], league=fx["league"], date=fx["date"].isoformat(), time=fx["time"],
+        ko=fx["ko"].strftime("%Y-%m-%dT%H:%MZ") if fx.get("ko") else None, src=fx.get("src"),
         home=fx["home"], away=fx["away"],
         xg=[round(pr["xg"][0], 2), round(pr["xg"][1], 2)], model_xg=[round(v, 2) for v in pr["model_xg"]],
         p1x2=[round(s["H"], 4), round(s["D"], 4), round(s["A"], 4)],
@@ -425,31 +440,127 @@ def hit(code, hg, ag):
 
 
 # ---------------------------------------------------------------- main
+def norm(name):
+    import unicodedata
+    n = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    n = re.sub(r"[^a-z0-9 ]", " ", n)
+    drop = {"fc", "afc", "cf", "sc", "ac", "club", "de", "the", "cd", "ud", "sd", "rc", "fk", "sk", "if", "bk", "cp", "ca", "us", "as"}
+    return " ".join(w for w in n.split() if w not in drop)
+
+
+def same_team(a, b):
+    a, b = norm(a), norm(b)
+    if not a or not b:
+        return False
+    if a in b or b in a:
+        return True
+    return difflib.SequenceMatcher(None, a, b).ratio() >= 0.72 or a.split()[0] == b.split()[0]
+
+
+def espn_fixture(m):
+    return dict(div="espn", id="espn-" + m["eid"], src="espn", eid=m["eid"], country="", league=m["league"],
+                date=m["ko"].date(), time=m["ko"].strftime("%H:%M"), ko=m["ko"], home=m["home"], away=m["away"],
+                hk=m["hk"], ak=m["ak"], sharp=m["odds"], avg=m["odds"], best=m["odds"],
+                sharp_ou=m["ou"], avg_ou=m["ou"], best_ou=m["ou"])
+
+
+def live_record(out, espn_results, fd_results, now):
+    """Save every published pick, then grade it once the match has a result."""
+    try:
+        h = json.load(open(HIST))
+    except Exception:  # noqa: BLE001
+        h = {"pending": {}, "graded": []}
+    for m in out:
+        h["pending"][m["id"]] = dict(id=m["id"], src=m.get("src"), ko=m.get("ko"), div=m["id"].split("-")[0],
+                                     date=m["date"], home=m["home"], away=m["away"], league=m["league"],
+                                     country=m["country"], pick=m["safe"]["pick"], label=m["safe"]["label"],
+                                     p=m["safe"]["p"], confidence=m["confidence"], has_odds=m["has_odds"])
+    by_eid = {r["eid"]: r for r in espn_results}
+    done = {g["id"] for g in h["graded"]}
+    for pid, s in list(h["pending"].items()):
+        ko = datetime.strptime(s["ko"], "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc) if s.get("ko") else None
+        if ko is None or ko > now - timedelta(hours=2, minutes=30):
+            continue
+        res = None
+        if s["src"] == "espn":
+            r = by_eid.get(pid.split("-", 1)[1])
+            res = (r["hg"], r["ag"]) if r else None
+        else:
+            rs = fd_results.get(s["div"])
+            if rs is None:
+                rs = fd_results[s["div"]] = load_results(s["div"])
+            r = next((x for x in rs if x["date"].isoformat() == s["date"] and x["home"] == s["home"] and x["away"] == s["away"]), None)
+            res = (int(r["hg"]), int(r["ag"])) if r else None
+        if res:
+            if pid not in done:
+                h["graded"].append(dict(s, score=f"{res[0]}-{res[1]}", won=hit(s["pick"], *res)))
+            del h["pending"][pid]
+        elif ko < now - timedelta(days=5):
+            del h["pending"][pid]
+    h["graded"] = sorted(h["graded"], key=lambda g: g.get("ko") or "")[-3000:]
+    json.dump(h, open(HIST, "w"), separators=(",", ":"))
+    g = h["graded"]
+    wk = (now - timedelta(days=7)).strftime("%Y-%m-%dT%H:%MZ")
+    g7 = [x for x in g if (x.get("ko") or "") >= wk]
+    top = [x for x in g if x["confidence"] >= 80]
+    return dict(n=len(g), won=sum(x["won"] for x in g), pred=round(sum(x["p"] for x in g) / len(g), 4) if g else None,
+                n7=len(g7), won7=sum(x["won"] for x in g7),
+                n80=len(top), won80=sum(x["won"] for x in top),
+                pending=len(h["pending"]), items=list(reversed(g))[:80])
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--from", dest="start", help="first fixture date YYYY-MM-DD (default: today, UTC)")
+    ap.add_argument("--from", dest="start", help="first fixture date YYYY-MM-DD (testing; skips ESPN and the live record)")
     ap.add_argument("--backtest", action="store_true", help="also run the walk-forward backtest")
+    ap.add_argument("--days", type=int, default=2, help="days ahead to include (default 2: today + 2)")
     ap.add_argument("--out", default=OUT)
     a = ap.parse_args()
-    start = date.fromisoformat(a.start) if a.start else datetime.now(timezone.utc).date()
+    now = datetime.now(timezone.utc)
+    test = bool(a.start)
+    start = date.fromisoformat(a.start) if test else now.date()
+    horizon = datetime(start.year, start.month, start.day, tzinfo=timezone.utc) + timedelta(days=a.days + 1)
 
-    fixtures = [f for f in load_fixtures() if f["date"] >= start]
-    divs = sorted({f["div"] for f in fixtures} | (set(MAIN) if a.backtest else set()))
-    print(f"{len(fixtures)} fixtures from {start} in {len({f['div'] for f in fixtures})} leagues")
+    fd_fx = [f for f in load_fixtures() if (f["date"] >= start if test else f["ko"] > now) and f["ko"] < horizon]
+    divs = sorted({f["div"] for f in fd_fx} | (set(MAIN) if a.backtest else set()))
+    print(f"football-data: {len(fd_fx)} fixtures in {len({f['div'] for f in fd_fx})} leagues")
     results, ratings = {}, {}
     for d in divs:
         results[d] = load_results(d)
         ratings[d] = Ratings(results[d], start)
-        print(f"  {d}: {len(results[d])} results, {len(ratings[d].att)} teams")
 
     out = []
-    for f in sorted(fixtures, key=lambda f: (f["date"], f["time"], f["country"], f["league"])):
+    for f in fd_fx:
         try:
             out.append(build(f, ratings[f["div"]]))
         except Exception as e:  # noqa: BLE001
             print(f"  ! {f['home']} v {f['away']}: {e}", file=sys.stderr)
 
-    # last round: picks made before kickoff, graded against the real results
+    espn_res, live = [], None
+    if not test:
+        espn_res, espn_fx = espn.load(history_days=160, ahead_days=a.days, now=now)
+        espn_fx = [m for m in espn_fx if m["ko"] < horizon]
+        rows = [dict(date=m["ko"].date(), home=m["hk"], away=m["ak"], hg=float(m["hg"]), ag=float(m["ag"]),
+                     hxg=None, axg=None) for m in espn_res]
+        rt = Ratings(rows, start)
+        print(f"espn: {len(espn_res)} results, {len(rt.att)} teams, {len(espn_fx)} fixtures")
+        added = dup = 0
+        for m in espn_fx:
+            if any(abs((f["ko"] - m["ko"]).total_seconds()) < 4 * 3600 and same_team(f["home"], m["home"])
+                   and same_team(f["away"], m["away"]) for f in fd_fx):
+                dup += 1
+                continue
+            try:
+                out.append(build(espn_fixture(m), rt))
+                added += 1
+            except Exception as e:  # noqa: BLE001
+                print(f"  ! {m['home']} v {m['away']}: {e}", file=sys.stderr)
+        print(f"espn: added {added}, skipped {dup} already covered by football-data")
+        live = live_record(out, espn_res, results, now)
+        print(f"live record: {live['won']}/{live['n']} graded picks won, {live['pending']} pending")
+    out.sort(key=lambda m: (m.get("ko") or m["date"], m["league"]))
+
+    # last round (football-data): picks made before kickoff, graded against the real results
     recent = []
     for f in sorted((f for f in load_fixtures() if start - timedelta(days=10) <= f["date"] < start),
                     key=lambda f: (f["date"], f["time"])):
@@ -476,13 +587,18 @@ def main():
             prev = None
     bt = backtest(results, date(int(SEASON[:2]) + 2000, 9, 15)) if a.backtest else prev
 
+    for m in out:   # trim payload: drop empty odds fields
+        for x in m["markets"]:
+            for k in ("avg", "best", "edge_avg", "edge_best"):
+                if x.get(k) is None:
+                    x.pop(k, None)
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
-    json.dump(dict(generated=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"), start=start.isoformat(),
-                   source="football-data.co.uk", matches=out, recent=recent, backtest=bt),
+    json.dump(dict(generated=now.strftime("%Y-%m-%dT%H:%MZ"), start=start.isoformat(),
+                   source="football-data.co.uk + ESPN", matches=out, recent=recent, live=live, backtest=bt),
               open(a.out, "w"), separators=(",", ":"))
-    print(f"wrote {len(out)} matches -> {os.path.relpath(a.out, ROOT)}")
-    if bt:
-        print(json.dumps(bt, indent=1))
+    print(f"wrote {len(out)} matches ({sum(m['has_odds'] for m in out)} with odds) -> {os.path.relpath(a.out, ROOT)}")
+    if bt and a.backtest:
+        print(json.dumps({k: v for k, v in bt.items() if k != "calibration"}))
 
 
 if __name__ == "__main__":

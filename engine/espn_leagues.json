@@ -1,0 +1,646 @@
+{
+"606": {
+"slug": "fifa.world",
+"name": "FIFA World Cup"
+},
+"620": {
+"slug": "bol.1",
+"name": "Bolivian Liga Profesional"
+},
+"630": {
+"slug": "bra.1",
+"name": "Brazilian Serie A"
+},
+"640": {
+"slug": "chi.1",
+"name": "Chilean Primera División"
+},
+"650": {
+"slug": "col.1",
+"name": "Colombian Primera A"
+},
+"660": {
+"slug": "ecu.1",
+"name": "LigaPro Ecuador"
+},
+"670": {
+"slug": "per.1",
+"name": "Peruvian Liga 1"
+},
+"680": {
+"slug": "uru.1",
+"name": "Liga AUF Uruguaya"
+},
+"700": {
+"slug": "eng.1",
+"name": "English Premier League"
+},
+"710": {
+"slug": "fra.1",
+"name": "French Ligue 1"
+},
+"715": {
+"slug": "por.1",
+"name": "Portuguese Primeira Liga"
+},
+"720": {
+"slug": "ger.1",
+"name": "German Bundesliga"
+},
+"725": {
+"slug": "ned.1",
+"name": "Dutch Eredivisie"
+},
+"730": {
+"slug": "ita.1",
+"name": "Italian Serie A"
+},
+"735": {
+"slug": "sco.1",
+"name": "Scottish Premiership"
+},
+"740": {
+"slug": "esp.1",
+"name": "Spanish LALIGA"
+},
+"745": {
+"slug": "arg.1",
+"name": "Argentine Liga Profesional de Fútbol"
+},
+"750": {
+"slug": "jpn.1",
+"name": "Japanese J.League"
+},
+"760": {
+"slug": "mex.1",
+"name": "Mexican Liga BBVA MX"
+},
+"770": {
+"slug": "usa.1",
+"name": "MLS"
+},
+"775": {
+"slug": "uefa.champions",
+"name": "UEFA Champions League"
+},
+"776": {
+"slug": "uefa.europa",
+"name": "UEFA Europa League"
+},
+"781": {
+"slug": "uefa.euro",
+"name": "UEFA European Championship"
+},
+"783": {
+"slug": "conmebol.libertadores",
+"name": "CONMEBOL Libertadores"
+},
+"786": {
+"slug": "fifa.worldq.uefa",
+"name": "FIFA World Cup Qualifying - UEFA"
+},
+"787": {
+"slug": "fifa.worldq.conmebol",
+"name": "FIFA World Cup Qualifying - CONMEBOL"
+},
+"788": {
+"slug": "fifa.worldq.concacaf",
+"name": "FIFA World Cup Qualifying - Concacaf"
+},
+"789": {
+"slug": "fifa.worldq.afc",
+"name": "FIFA World Cup Qualifying - AFC"
+},
+"790": {
+"slug": "fifa.worldq.caf",
+"name": "FIFA World Cup Qualifying - CAF"
+},
+"2391": {
+"slug": "caf.champions",
+"name": "CAF Champions League"
+},
+"2395": {
+"slug": "uefa.nations",
+"name": "UEFA Nations League"
+},
+"2466": {
+"slug": "afc.cup",
+"name": "AFC Champions League Two"
+},
+"3901": {
+"slug": "bel.1",
+"name": "Belgian Pro League"
+},
+"3902": {
+"slug": "afc.champions",
+"name": "AFC Champions League Elite"
+},
+"3903": {
+"slug": "arg.2",
+"name": "Argentine Nacional B"
+},
+"3904": {
+"slug": "arg.3",
+"name": "Argentine Primera B"
+},
+"3905": {
+"slug": "arg.5",
+"name": "Argentine Primera D"
+},
+"3906": {
+"slug": "aus.1",
+"name": "Australian A-League Men"
+},
+"3907": {
+"slug": "aut.1",
+"name": "Austrian Bundesliga"
+},
+"3908": {
+"slug": "caf.nations",
+"name": "Africa Cup of Nations"
+},
+"3909": {
+"slug": "chi.2",
+"name": "Segunda División de Chile"
+},
+"3910": {
+"slug": "col.2",
+"name": "Colombian Primera B"
+},
+"3913": {
+"slug": "den.1",
+"name": "Danish Superliga"
+},
+"3914": {
+"slug": "eng.2",
+"name": "English League Championship"
+},
+"3915": {
+"slug": "eng.3",
+"name": "English League One"
+},
+"3916": {
+"slug": "eng.4",
+"name": "English League Two"
+},
+"3917": {
+"slug": "eng.5",
+"name": "English National League"
+},
+"3918": {
+"slug": "eng.fa",
+"name": "English FA Cup"
+},
+"3920": {
+"slug": "eng.league_cup",
+"name": "English Carabao Cup"
+},
+"3921": {
+"slug": "esp.2",
+"name": "Spanish LALIGA 2"
+},
+"3922": {
+"slug": "fifa.friendly",
+"name": "International Friendly"
+},
+"3926": {
+"slug": "fra.2",
+"name": "French Ligue 2"
+},
+"3927": {
+"slug": "ger.2",
+"name": "German 2. Bundesliga"
+},
+"3928": {
+"slug": "gua.1",
+"name": "Guatemalan Liga Nacional"
+},
+"3929": {
+"slug": "hon.1",
+"name": "Honduran Liga Nacional"
+},
+"3930": {
+"slug": "irl.1",
+"name": "Irish Premier Division"
+},
+"3931": {
+"slug": "ita.2",
+"name": "Italian Serie B"
+},
+"3932": {
+"slug": "mex.2",
+"name": "Mexican Liga de Expansión MX"
+},
+"3933": {
+"slug": "ned.2",
+"name": "Dutch Keuken Kampioen Divisie"
+},
+"3934": {
+"slug": "par.1",
+"name": "Paraguayan Primera División"
+},
+"3935": {
+"slug": "par.2",
+"name": "Segunda División de Paraguay"
+},
+"3936": {
+"slug": "per.2",
+"name": "Segunda División de Perú"
+},
+"3937": {
+"slug": "rsa.1",
+"name": "South African Premiership"
+},
+"3938": {
+"slug": "rsa.2",
+"name": "South African First Division"
+},
+"3939": {
+"slug": "rus.1",
+"name": "Russian Premier League"
+},
+"3940": {
+"slug": "sco.2",
+"name": "Scottish Championship"
+},
+"3941": {
+"slug": "sco.3",
+"name": "Scottish League One"
+},
+"3942": {
+"slug": "sco.4",
+"name": "Scottish League Two"
+},
+"3943": {
+"slug": "slv.1",
+"name": "Salvadoran Primera Division"
+},
+"3944": {
+"slug": "sui.1",
+"name": "Swiss Super League"
+},
+"3945": {
+"slug": "swe.1",
+"name": "Swedish Allsvenskan"
+},
+"3946": {
+"slug": "tur.1",
+"name": "Turkish Super Lig"
+},
+"3947": {
+"slug": "uefa.euroq",
+"name": "UEFA European Championship Qualifying"
+},
+"3948": {
+"slug": "uru.2",
+"name": "Segunda División de Uruguay"
+},
+"3949": {
+"slug": "ven.1",
+"name": "Venezuelan Primera División"
+},
+"3950": {
+"slug": "ven.2",
+"name": "Segunda División de Venezuela"
+},
+"3951": {
+"slug": "esp.copa_del_rey",
+"name": "Spanish Copa del Rey"
+},
+"3952": {
+"slug": "fra.coupe_de_france",
+"name": "Coupe de France"
+},
+"3954": {
+"slug": "ger.dfb_pokal",
+"name": "German Cup"
+},
+"3955": {
+"slug": "gre.1",
+"name": "Greek Super League"
+},
+"3956": {
+"slug": "ita.coppa_italia",
+"name": "Coppa Italia"
+},
+"3957": {
+"slug": "ned.cup",
+"name": "Dutch KNVB Beker"
+},
+"3958": {
+"slug": "nir.1",
+"name": "Northern Irish Premiership"
+},
+"3959": {
+"slug": "sco.tennents",
+"name": "Scottish Cup"
+},
+"3960": {
+"slug": "nor.1",
+"name": "Norwegian Eliteserien"
+},
+"3963": {
+"slug": "wal.1",
+"name": "Welsh Premier League"
+},
+"4002": {
+"slug": "usa.usl.1",
+"name": "USL Championship"
+},
+"4003": {
+"slug": "arg.4",
+"name": "Argentine Primera C"
+},
+"4005": {
+"slug": "crc.1",
+"name": "Costa Rican Primera Division"
+},
+"4007": {
+"slug": "bra.2",
+"name": "Brazilian Serie B"
+},
+"5315": {
+"slug": "fin.1",
+"name": "Finnish Veikkausliga"
+},
+"5329": {
+"slug": "eng.charity",
+"name": "English FA Community Shield"
+},
+"5330": {
+"slug": "sco.cis",
+"name": "Scottish League Cup"
+},
+"5337": {
+"slug": "usa.open",
+"name": "U.S. Open Cup"
+},
+"5345": {
+"slug": "aut.2",
+"name": "Austrian Division I"
+},
+"5346": {
+"slug": "cyp.1",
+"name": "Cypriot First Division"
+},
+"5347": {
+"slug": "cze.1",
+"name": "Gambrinus Liga"
+},
+"5348": {
+"slug": "den.2",
+"name": "Danish  1. Division"
+},
+"5349": {
+"slug": "den.3",
+"name": "Danish  2. Division"
+},
+"5353": {
+"slug": "fin.2",
+"name": "Finnish 1. Division"
+},
+"5360": {
+"slug": "nor.2",
+"name": "Norwegian 1. Division"
+},
+"5361": {
+"slug": "nor.3",
+"name": "Norwegian 2. Division"
+},
+"5362": {
+"slug": "swe.2",
+"name": "Swedish SuperEttan"
+},
+"5363": {
+"slug": "sui.2",
+"name": "Swiss Challenge League"
+},
+"5454": {
+"slug": "conmebol.sudamericana",
+"name": "CONMEBOL Sudamericana"
+},
+"5462": {
+"slug": "uefa.super_cup",
+"name": "UEFA Super Cup"
+},
+"5487": {
+"slug": "usa.ncaa.m.1",
+"name": "NCAA Men's Soccer"
+},
+"5499": {
+"slug": "usa.ncaa.w.1",
+"name": "NCAA Women's Soccer"
+},
+"5501": {
+"slug": "fifa.cwc",
+"name": "FIFA Club World Cup"
+},
+"5699": {
+"slug": "concacaf.champions",
+"name": "Concacaf Champions Cup"
+},
+"8078": {
+"slug": "ecu.2",
+"name": "Ecuador Serie B"
+},
+"8097": {
+"slug": "eng.w.1",
+"name": "English Women's Super League"
+},
+"8101": {
+"slug": "ger.super_cup",
+"name": "German Supercup"
+},
+"8102": {
+"slug": "esp.super_cup",
+"name": "Spanish Supercopa"
+},
+"8103": {
+"slug": "ita.super_cup",
+"name": "Italian Supercoppa"
+},
+"8107": {
+"slug": "arg.copa",
+"name": "Copa Argentina"
+},
+"8301": {
+"slug": "usa.nwsl",
+"name": "NWSL"
+},
+"8306": {
+"slug": "bra.copa_do_brazil",
+"name": "Copa do Brasil"
+},
+"8315": {
+"slug": "caf.nations_qual",
+"name": "Africa Cup of Nations Qualifying"
+},
+"8316": {
+"slug": "ind.1",
+"name": "Indian Super League"
+},
+"8339": {
+"slug": "idn.1",
+"name": "Indonesian Super League"
+},
+"8340": {
+"slug": "mys.1",
+"name": "Malaysian Super League"
+},
+"8341": {
+"slug": "sgp.1",
+"name": "Singaporean Premier League"
+},
+"8344": {
+"slug": "tha.1",
+"name": "Thai League 1"
+},
+"8345": {
+"slug": "nga.1",
+"name": "Nigerian Professional League"
+},
+"8347": {
+"slug": "jam.1",
+"name": "Jamaican Premier League"
+},
+"8376": {
+"slug": "chn.1",
+"name": "Chinese Super League"
+},
+"10747": {
+"slug": "rou.1",
+"name": "Romanian Liga 1"
+},
+"10750": {
+"slug": "isr.1",
+"name": "Israeli Premier League"
+},
+"11052": {
+"slug": "gha.1",
+"name": "Ghanaian Premier League"
+},
+"11053": {
+"slug": "uga.1",
+"name": "Ugandan Premier League"
+},
+"11054": {
+"slug": "ken.1",
+"name": "Kenyan Premier League"
+},
+"11067": {
+"slug": "zim.1",
+"name": "Zimbabwean Premier Soccer League"
+},
+"11088": {
+"slug": "bra.3",
+"name": "Brazilian Serie C"
+},
+"11090": {
+"slug": "zam.1",
+"name": "Zambian Super League"
+},
+"18000": {
+"slug": "caf.confed",
+"name": "CAF Confederation Cup"
+},
+"18481": {
+"slug": "eng.trophy",
+"name": "English EFL Trophy"
+},
+"18505": {
+"slug": "ind.2",
+"name": "Indian Football League"
+},
+"19425": {
+"slug": "concacaf.leagues.cup",
+"name": "Leagues Cup"
+},
+"19834": {
+"slug": "club.friendly",
+"name": "Club Friendly"
+},
+"19874": {
+"slug": "uefa.champions_qual",
+"name": "UEFA Champions League Qualifying"
+},
+"19887": {
+"slug": "uefa.europa_qual",
+"name": "UEFA Europa League Qualifying"
+},
+"19908": {
+"slug": "ned.3",
+"name": "Dutch Tweede Divisie"
+},
+"19915": {
+"slug": "usa.usl.l1",
+"name": "USL League One"
+},
+"20219": {
+"slug": "afc.asian.cup",
+"name": "AFC Asian Cup"
+},
+"20296": {
+"slug": "uefa.europa.conf",
+"name": "UEFA Conference League"
+},
+"20922": {
+"slug": "por.taca.portugal",
+"name": "Taca de Portugal"
+},
+"20955": {
+"slug": "fra.w.1",
+"name": "French Première Ligue"
+},
+"20956": {
+"slug": "esp.w.1",
+"name": "Spanish Liga F"
+},
+"21231": {
+"slug": "ksa.1",
+"name": "Saudi Pro League"
+},
+"22057": {
+"slug": "ksa.kings.cup",
+"name": "Saudi King's Cup"
+},
+"23541": {
+"slug": "mex.w.1",
+"name": "Mexican Liga BBVA MX Femenil"
+},
+"23576": {
+"slug": "bra.4",
+"name": "Brazilian Serie D"
+},
+"18992": {
+"slug": "aus.w.1",
+"name": "Australian A-League Women"
+},
+"5697": {
+"slug": "fifa.youth",
+"name": "FIFA Youth World Cup"
+},
+"23633": {
+"slug": "usa.w.usl",
+"name": "USL Super League (Women)"
+},
+"19968": {
+"slug": "swe.playoff",
+"name": "Swedish Promotion Playoff"
+},
+"19989": {
+"slug": "nor.playoff",
+"name": "Norwegian Promotion Playoff"
+},
+"20226": {
+"slug": "cup.playoff",
+"name": "Cup / Playoff"
+},
+"23390": {
+"slug": "eng.w.cup",
+"name": "English Women's League Cup"
+},
+"19945": {
+"slug": "ned.w.1",
+"name": "Dutch Vrouwen Eredivisie"
+}
+}

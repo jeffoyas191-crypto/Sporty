@@ -2,7 +2,7 @@
 
 Automatic football predictions for 30+ leagues, for your phone.
 
-- `engine/predict.py` downloads results, fixtures and odds from football-data.co.uk, rates every team, prices every upcoming match, grades last round's picks and runs a walk-forward backtest. Output: `app/data/predictions.json`.
+- `engine/predict.py` downloads results, fixtures and odds from football-data.co.uk and ESPN (`engine/espn.py`, 150+ competitions), rates every team, prices every upcoming match, grades last round's picks and runs a walk-forward backtest. Output: `app/data/predictions.json`. Every published pick is also logged in `app/data/history.json` and graded after full time (live record).
 - `app/index.html` is the phone app: match list with best picks and confidence, auto-pick of the best 2–20 games, slip with smart split and copy-to-SportyBet, and a track record view.
 - `app/manual.html` is the original calculator for entering a match by hand.
 

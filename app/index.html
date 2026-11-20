@@ -93,7 +93,7 @@ pre{white-space:pre-wrap;background:var(--field);border:1px solid var(--line);bo
         </select>
         <button id="auto">Pick best games</button>
       </div>
-      <p class="note" id="autoNote">Ranks every upcoming match by confidence and adds the strongest ones to your slip.</p>
+      <p class="note" id="autoNote">Ranks the matches for the day and league selected below by confidence, then adds the strongest ones (with bookmaker odds) to your slip.</p>
     </div>
 
     <div class="chips" id="days"></div>
@@ -127,15 +127,27 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 };
-let DATA = null, day = 'upcoming';
+let DATA = null, day = null;
+let shown = 40;
 let slip = store.get('slip2', {});            // id -> pick code
 const todayISO = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const fmtDay = iso => new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 const confCls = c => c >= 80 ? 'c-hi' : c >= 70 ? 'c-md' : 'c-lo';
 const byId = id => DATA.matches.find(m => m.id === id);
+const koDate = m => m.ko ? new Date(m.ko.replace('Z', ':00Z')) : new Date(m.date + 'T15:00:00Z');
+const localDay = m => { const d = koDate(m); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const fmtTime = m => koDate(m).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+const lg = m => m.country ? `${m.country} · ${m.league}` : m.league;
 const mk = (m, code) => m.markets.find(x => x.pick === code) || m.safe;
 
-function upcoming() { const t = todayISO(); return DATA.matches.filter(m => m.date >= t); }
+function upcoming() { const now = Date.now(); return DATA.matches.filter(m => koDate(m).getTime() > now); }
+function visible() {
+  let ms = upcoming();
+  if (day !== 'upcoming') ms = ms.filter(m => localDay(m) === day);
+  const l = $('league').value;
+  if (l) ms = ms.filter(m => lg(m) === l);
+  return ms;
+}
 
 async function load() {
   for (const u of ['predictions.json', 'data/predictions.json']) {
@@ -145,7 +157,7 @@ async function load() {
   const g = new Date(DATA.generated.replace('Z', ':00Z'));
   $('status').textContent = `Updated ${g.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })} · ${upcoming().length} upcoming matches · odds from ${DATA.source}`;
   for (const id of Object.keys(slip)) if (!byId(id)) delete slip[id];
-  const leagues = [...new Set(DATA.matches.map(m => `${m.country} · ${m.league}`))].sort();
+  const leagues = [...new Set(DATA.matches.map(lg))].sort();
   $('league').innerHTML = '<option value="">All leagues</option>' + leagues.map(l => `<option>${esc(l)}</option>`).join('');
   renderAll();
 }
@@ -153,11 +165,13 @@ async function load() {
 function renderAll() { renderDays(); renderList(); renderSlip(); renderRecord(); }
 
 function renderDays() {
-  const ds = [...new Set(upcoming().map(m => m.date))].sort();
-  const chips = [['upcoming', 'All upcoming'], ...ds.map(d => [d, d === todayISO() ? 'Today' : fmtDay(d)])];
+  const ds = [...new Set(upcoming().map(localDay))].sort();
+  const cnt = d => upcoming().filter(m => localDay(m) === d).length;
+  const chips = [['upcoming', `All (${upcoming().length})`], ...ds.map(d => [d, `${d === todayISO() ? 'Today' : fmtDay(d)} (${cnt(d)})`])];
+  if (day === null) day = ds.includes(todayISO()) ? todayISO() : 'upcoming';
   if (!chips.some(c => c[0] === day)) day = 'upcoming';
   $('days').innerHTML = chips.map(([k, l]) => `<button class="chip ${k === day ? 'on' : ''}" data-day="${k}">${esc(l)}</button>`).join('');
-  $('days').querySelectorAll('[data-day]').forEach(b => b.onclick = () => { day = b.dataset.day; renderDays(); renderList(); });
+  $('days').querySelectorAll('[data-day]').forEach(b => b.onclick = () => { day = b.dataset.day; shown = 40; renderDays(); renderList(); });
 }
 
 function card(m) {
@@ -165,7 +179,7 @@ function card(m) {
   const [h, d, a] = m.p1x2;
   const v = m.value;
   return `<article class="card ${on ? 'sel' : ''}">
-    <div class="meta"><span>${esc(fmtDay(m.date))}${m.time ? ' · ' + esc(m.time) + ' UK' : ''} · ${esc(m.country)} ${esc(m.league)}</span>
+    <div class="meta"><span>${esc(fmtDay(localDay(m)))} · ${esc(fmtTime(m))} · ${esc(lg(m))}</span>
       <span class="conf ${confCls(m.confidence)}" title="Confidence">${m.confidence}</span></div>
     <div class="teams">${esc(m.home)}<span class="vs">vs</span>${esc(m.away)}</div>
     <div class="bar"><i style="width:${h * 100}%;background:var(--acc)"></i><i style="width:${d * 100}%;background:var(--draw)"></i><i style="width:${a * 100}%;background:var(--warn)"></i></div>
@@ -189,17 +203,17 @@ function card(m) {
 }
 
 function renderList() {
-  let ms = upcoming();
-  if (day !== 'upcoming') ms = ms.filter(m => m.date === day);
-  const lg = $('league').value;
-  if (lg) ms = ms.filter(m => `${m.country} · ${m.league}` === lg);
-  if ($('sort').value === 'conf') ms = [...ms].sort((a, b) => b.confidence - a.confidence);
+  let ms = visible();
+  if ($('sort').value === 'conf') ms = [...ms].sort((a, b) => (b.has_odds - a.has_odds) || (b.confidence - a.confidence));
+  else ms = [...ms].sort((a, b) => koDate(a) - koDate(b));
+  const total = ms.length; ms = ms.slice(0, shown);
   if (!ms.length) {
     const last = DATA.recent?.length ? ` Last round's safe picks won <b>${DATA.recent.filter(r => r.won).length} of ${DATA.recent.length}</b>. See Track record.` : '';
     $('list').innerHTML = `<div class="card empty">No upcoming matches in the latest data yet.<br>The source posts weekend fixtures on Fridays and midweek fixtures on Tuesdays, and this page refreshes every day.${last}</div>`;
     return;
   }
-  $('list').innerHTML = ms.map(card).join('');
+  $('list').innerHTML = ms.map(card).join('') + (total > shown ? `<button class="ghost wide" id="more">Show more (${total - shown} left)</button>` : '');
+  if ($('more')) $('more').onclick = () => { shown += 40; renderList(); };
   $('list').querySelectorAll('[data-tog]').forEach(b => b.onclick = () => toggle(b.dataset.tog));
   $('list').querySelectorAll('tr.choose').forEach(tr => tr.onclick = () => { slip[tr.dataset.id] = tr.dataset.pick; save(); renderList(); renderSlip(); });
 }
@@ -209,12 +223,12 @@ function save() { store.set('slip2', slip); }
 
 function autoPick() {
   const n = +$('n').value, mode = $('mode').value;
-  const pool = upcoming().filter(m => m.has_odds).map(m => {
+  const pool = visible().filter(m => m.has_odds).map(m => {
     if (mode === 'value') return m.value ? { m, pick: m.value.pick, score: m.value.edge_best } : null;
     if (mode === 'win') { const w = m.markets.filter(x => x.market === '1X2').sort((a, b) => b.p - a.p)[0]; return { m, pick: w.pick, score: w.p }; }
     return { m, pick: m.safe.pick, score: m.confidence };
   }).filter(Boolean).sort((a, b) => b.score - a.score).slice(0, n);
-  if (!pool.length) { $('autoNote').textContent = mode === 'value' ? 'No value bets in the current fixtures. That happens often, because the market is usually right.' : 'No upcoming matches with odds yet.'; return; }
+  if (!pool.length) { $('autoNote').textContent = mode === 'value' ? 'No value bets in the current fixtures. That happens often, because the market is usually right.' : 'No matches with odds for this day and league. Pick another day or All.'; return; }
   slip = {}; pool.forEach(x => slip[x.m.id] = x.pick); save();
   $('autoNote').textContent = `Added ${pool.length} ${pool.length < n ? `(only ${pool.length} qualified) ` : ''}games to your slip.`;
   renderList(); renderSlip(); location.hash = '#slip';
@@ -229,11 +243,11 @@ function renderSlip() {
   const size = +store.get('split', 3);
   const groups = []; for (let i = 0; i < legs.length; i += size) groups.push(legs.slice(i, i + size));
   const expWin = groups.reduce((a, g) => a + g.reduce((q, l) => q * l.x.p, 1), 0);
-  const text = legs.map((l, i) => `${i + 1}. ${l.m.home} vs ${l.m.away} (${fmtDay(l.m.date)} ${l.m.time}): ${l.x.pick}`).join('\n');
+  const text = legs.map((l, i) => `${i + 1}. ${l.m.home} vs ${l.m.away} (${fmtDay(localDay(l.m))} ${fmtTime(l.m)}, ${l.m.league}): ${l.x.pick}`).join('\n');
   $('slip').innerHTML = `
     <div class="card"><h2>Your ${legs.length} picks</h2>
       <div class="scroll"><table><tr><th>Match</th><th>Pick</th><th class="n">Chance</th><th class="n">Min</th><th></th></tr>
-      ${legs.map(l => `<tr><td>${esc(l.m.home)} v ${esc(l.m.away)}<br><span class="mut small">${esc(fmtDay(l.m.date))} ${esc(l.m.time)}</span></td>
+      ${legs.map(l => `<tr><td>${esc(l.m.home)} v ${esc(l.m.away)}<br><span class="mut small">${esc(fmtDay(localDay(l.m)))} ${esc(fmtTime(l.m))}</span></td>
         <td><select data-leg="${esc(l.m.id)}" aria-label="Pick">${l.m.markets.filter(x => x.fair <= 6).map(x => `<option ${x.pick === l.x.pick ? 'selected' : ''} value="${esc(x.pick)}">${esc(x.pick)}</option>`).join('')}</select></td>
         <td class="n">${pct(l.x.p)}</td><td class="n">${l.x.fair.toFixed(2)}</td>
         <td class="n"><button class="sm ghost" data-rm="${esc(l.m.id)}" aria-label="Remove">✕</button></td></tr>`).join('')}
@@ -268,11 +282,21 @@ function renderSlip() {
 }
 
 function renderRecord() {
-  const bt = DATA.backtest, rc = DATA.recent || [];
+  const bt = DATA.backtest, rc = DATA.recent || [], lv = DATA.live;
   const won = rc.filter(r => r.won).length;
   $('record').innerHTML = `
+    ${lv ? `<div class="card"><h2>Live record</h2>
+      <p class="small mut" style="margin-top:0">Every best pick this app has published, checked against the final score.</p>
+      ${lv.n ? `<div class="stats">
+        <div><span class="small mut">All picks</span><div class="big num">${lv.won}/${lv.n}</div><span class="small mut">${pct(lv.won / lv.n)} won · predicted ${pct(lv.pred)}</span></div>
+        <div><span class="small mut">Last 7 days</span><div class="big num">${lv.won7}/${lv.n7}</div><span class="small mut">${lv.n7 ? pct(lv.won7 / lv.n7) + ' won' : 'none yet'}</span></div>
+        <div><span class="small mut">Confidence 80+</span><div class="big num">${lv.won80}/${lv.n80}</div><span class="small mut">${lv.n80 ? pct(lv.won80 / lv.n80) + ' won' : 'none yet'}</span></div>
+        <div><span class="small mut">Waiting for results</span><div class="big num">${lv.pending}</div><span class="small mut">graded after full time</span></div></div>
+      <div class="scroll" style="margin-top:12px"><table><tr><th>Match</th><th>Pick</th><th class="n">Chance</th><th class="n">Score</th><th></th></tr>
+      ${lv.items.slice(0, 40).map(r => `<tr><td>${esc(r.home)} v ${esc(r.away)}<br><span class="mut small">${esc(r.league)}</span></td><td>${esc(r.pick)}</td><td class="n">${pct(r.p)}</td><td class="n">${esc(r.score)}</td><td class="${r.won ? 'won' : 'lost'}">${r.won ? '✓' : '✗'}</td></tr>`).join('')}
+      </table></div>` : `<p>The first ${lv.pending} picks are waiting for full time. Results appear here after the next refresh.</p>`}</div>` : ''}
     ${bt ? `<div class="card"><h2>This season, replayed</h2>
-      <p class="small mut" style="margin-top:0">Every match since ${fmtDay(bt.since)} (${bt.matches.toLocaleString()} games in 22 European leagues), predicted using only data from before kick-off.</p>
+      <p class="small mut" style="margin-top:0">Every match since ${fmtDay(bt.since)} (${bt.matches.toLocaleString()} games in 22 European leagues with full odds history), predicted using only data from before kick-off.</p>
       <div class="stats">
         <div><span class="small mut">Safe picks won</span><div class="big num">${pct(bt.safe_hit)}</div><span class="small mut">predicted ${pct(bt.safe_pred)}</span></div>
         <div><span class="small mut">Top 20% most confident</span><div class="big num">${pct(bt.top20_hit)}</div><span class="small mut">predicted ${pct(bt.top20_pred)}</span></div>
@@ -287,7 +311,7 @@ function renderRecord() {
       ${rc.map(r => `<tr><td>${esc(r.home)} v ${esc(r.away)}<br><span class="mut small">${esc(fmtDay(r.date))} · ${esc(r.league)}</span></td><td>${esc(r.pick)}</td><td class="n">${pct(r.p)}</td><td class="n">${esc(r.score)}</td><td class="${r.won ? 'won' : 'lost'}">${r.won ? '✓' : '✗'}</td></tr>`).join('')}
       </table></div></div>` : ''}
     <div class="card"><h2>How it works</h2>
-      <p>Each day the engine downloads results, fixtures and odds from about 20 bookmakers for 30+ leagues. It rates every team's attack and defence from goals and expected goals (xG), with recent games counting more. It then removes the bookmaker margin from the odds and blends the two. One scoreline grid per match gives every market a consistent price: 1X2, double chance, over/under, GG/NG and correct score.</p>
+      <p>Twice a day the engine downloads results, fixtures and odds for 150+ competitions from football-data.co.uk (about 20 bookmakers averaged) and ESPN (DraftKings odds). It rates every team's attack and defence from goals and expected goals (xG), with recent games counting more. It then removes the bookmaker margin from the odds and blends the two. One scoreline grid per match gives every market a consistent price: 1X2, double chance, over/under, GG/NG and correct score.</p>
       <p>The backtest shows the honest truth: bookmaker odds are very accurate, and the stats model alone is worse than them. That's why the market gets most of the weight. The edge this app gives you is choosing well-priced, high-probability picks, refusing bad prices and keeping your tickets small.</p>
       <p class="note">No pick is guaranteed. A pick with an 85% chance still loses about 1 time in 7, and a 15-game accumulator of 85% picks wins only about 9% of the time. Bet only what you can afford to lose. If it stops being fun, get help from BeGambleAware or your local helpline.</p></div>`;
 }
@@ -301,7 +325,7 @@ function route() {
 }
 $('n').oninput = () => $('nOut').textContent = $('n').value;
 $('auto').onclick = autoPick;
-$('league').onchange = renderList; $('sort').onchange = renderList;
+$('league').onchange = () => { shown = 40; renderList(); }; $('sort').onchange = renderList;
 window.addEventListener('hashchange', route);
 route(); load();
 </script>
