@@ -1,6 +1,14 @@
 # Edge Predictor
 
-A football prediction app for your phone (installable web app, works offline).
+Automatic football predictions for 30+ leagues, for your phone.
+
+- `engine/predict.py` downloads results, fixtures and odds from football-data.co.uk, rates every team, prices every upcoming match, grades last round's picks and runs a walk-forward backtest. Output: `app/data/predictions.json`.
+- `app/index.html` is the phone app: match list with best picks and confidence, auto-pick of the best 2–20 games, slip with smart split and copy-to-SportyBet, and a track record view.
+- `app/manual.html` is the original calculator for entering a match by hand.
+
+Run: `python3 engine/predict.py --backtest` (standard library only).
+
+## Original manual calculator
 
 ## What it does
 - Turns recent goals scored and conceded into expected goals for each team, with small samples shrunk toward the league average.
